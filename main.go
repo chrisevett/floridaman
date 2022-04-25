@@ -1,49 +1,38 @@
+/*
+Copyright © 2022 NAME HERE <EMAIL ADDRESS>
+
+*/
 package main
 
 import (
 	"fmt"
-	"io/ioutil"
-	"net/http"
-	"net/url"
-	// add context
-	// "github.com/aws/aws-lambda-go/lambda"
+
+	"github.com/chrisevett/floridaman/cmd"
+	"github.com/chrisevett/floridaman/pkg/database"
+	i "github.com/chrisevett/floridaman/pkg/incident"
 )
 
-/*
-type GifEvent struct {
-	Query string `json:"query"`
-}*/
-
-/*
-func HandleRequest(ctx context.Context, name GifEvent) (string, error) {
-	return fmt.Sprintf("Hello %s!", name.Name ), nil
-}*/
-
 func main() {
-	// make giphy call with api key
-	// get a gif
-	// get a gif based on a term
-	// ZhpgEgAIcrjXG7pz9q3sun97lZF6IyXh
-	apikey := "ZhpgEgAIcrjXG7pz9q3sun97lZF6IyXh"
-	req, err := url.Parse("http://api.giphy.com/v1/gifs/search")
+
+	db, err := database.DbClient()
+
 	if err != nil {
-		panic("balls")
+		fmt.Println("Failed to establish database connection: ", err)
+		panic("Fatal")
 	}
 
-	query := req.Query()
-	query.Set("api_key", apikey)
-	query.Set("rating", "pg-13")
-	query.Set("limit", "25")
-	query.Set("lang", "en")
+	// add static data
 
-	req.RawQuery = query.Encode()
+	// fuck it lets truncate for now
 
-	// response, err := http.NewRequest("GET", req.String(),nil)
-	response, err := http.Get(req.String())
-	if err != nil {
-		panic(fmt.Sprintf("Error sending request: %s", err))
-	}
+	db.Exec("TRUNCATE TABLE incident_states;")
 
-	responseData, err := ioutil.ReadAll(response.Body)
-	fmt.Println(string(responseData))
+	var incidentStates = []i.IncidentState{{Id: 1, State: "Investigating", Description: "We are currently investigating the issue"},
+		{Id: 2, State: "Identified", Description: "We have identified the issue and are working on a resolution"},
+		{Id: 3, State: "Monitoring", Description: "We have implemented a correction and are monitoring the outcome"},
+		{Id: 4, State: "Resolved", Description: "The incident has been resolved"}}
+
+	db.Create(&incidentStates)
+	// todo : only do this if our entrypoint is cli
+	cmd.Execute()
 }
